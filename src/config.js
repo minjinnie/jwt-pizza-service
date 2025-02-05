@@ -13,7 +13,7 @@
         listPerPage: 10,
       },
       factory: {
-        url: 'https://pizza.minjin.click',
+        url: 'https://pizza-factory.cs329.click',
         apiKey: '${{ secrets.FACTORY_API_KEY }}',
       },
     };" > src/config.js
