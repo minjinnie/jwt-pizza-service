@@ -2,10 +2,8 @@ const { DB } = require('../database/database.js');
 const { Role } = require('../model/model.js');
 const bcrypt = require('bcrypt');
 
-// Jest setup
 jest.setTimeout(10000);
 
-// Function to generate a unique random name
 function randomName() {
   return 'Franchise_' + Math.random().toString(36).substring(2, 10);
 }
@@ -22,7 +20,6 @@ describe('Database Service Tests', () => {
       roles: [{ role: Role.Admin }],
     });
 
-    // Create a unique franchise name before testing users with Franchisee role
     testFranchise = await DB.createFranchise({
       name: randomName(),
       admins: [{ email: adminUser.email }],
@@ -52,7 +49,7 @@ describe('Database Service Tests', () => {
       name: 'Test User',
       email: 'user@test.com',
       password: 'password123',
-      roles: [{ role: Role.Franchisee, object: testFranchise.name }], // Use existing franchise
+      roles: [{ role: Role.Franchisee, object: testFranchise.name }],
     };
     const addedUser = await DB.addUser(newUser);
     expect(addedUser).toHaveProperty('id');
@@ -80,7 +77,7 @@ describe('Database Service Tests', () => {
 
   test('Should create and delete a franchise', async () => {
     const newFranchise = {
-      name: randomName(), // Use dynamic name
+      name: randomName(), // dynamic name
       admins: [{ email: adminUser.email }],
     };
     const franchise = await DB.createFranchise(newFranchise);
@@ -91,20 +88,20 @@ describe('Database Service Tests', () => {
     expect(franchises.some(f => f.id === franchise.id)).toBe(false);
   });
 
-//   test('Should create and delete a store', async () => {
-//     const franchise = await DB.createFranchise({ name: randomName(), admins: [{ email: adminUser.email }] });
-//     const store = await DB.createStore(franchise.id, { name: 'Test Store' });
-//     expect(store).toHaveProperty('id');
+  test('Should create and delete a store', async () => {
+    const franchise = await DB.createFranchise({ name: randomName(), admins: [{ email: adminUser.email }] });
+    const store = await DB.createStore(franchise.id, { name: 'Test Store' });
+    expect(store).toHaveProperty('id');
 
-//     // Delete the store
-//     await DB.deleteStore(franchise.id, store.id);
+    // Delete the store
+    await DB.deleteStore(franchise.id, store.id);
 
-//     // Retrieve the list of stores for the franchise
-//     const stores = await DB.getStores(franchise.id);
+    // Retrieve the list of stores for the franchise
+    const stores = await DB.getStores(franchise.id);
 
-//     // Check if the deleted store no longer exists
-//     expect(stores.some(s => s.id === store.id)).toBe(false);
-//   });
+    // Check if the deleted store no longer exists
+    expect(stores.some(s => s.id === store.id)).toBe(false);
+  });
 
   test('Should hash passwords correctly', async () => {
     const password = 'securepassword';

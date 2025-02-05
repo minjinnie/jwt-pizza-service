@@ -35,7 +35,7 @@ test('should prevent unauthorized user from updating another user', async () => 
     .set('Authorization', `Bearer ${otherUserAuthToken}`)
     .send({ email: 'hacked@test.com' });
 
-  expect(updateRes.status).toBe(403); // Unauthorized access
+  expect(updateRes.status).toBe(403);
 });
 
 test('should logout user', async () => {
@@ -53,5 +53,5 @@ test('should reject unauthorized access after logout', async () => {
     .set('Authorization', `Bearer ${testUserAuthToken}`)
     .send({ email: 'fail@test.com' });
 
-  expect(updateRes.status).toBe(401); // Should be unauthorized after logout
+  expect(updateRes.status).toBe(401); // should be unauthorized after logout
 });

@@ -1,10 +1,9 @@
 const request = require('supertest');
 const express = require('express');
-const franchiseRouter = require('./franchiseRouter.js'); // Adjust the path as needed
-const { DB } = require('../database/database.js'); // Adjust the path as needed
-const { authRouter } = require('./authRouter.js'); // Adjust the path as needed
+const franchiseRouter = require('./franchiseRouter.js'); 
+const { DB } = require('../database/database.js');
+const { authRouter } = require('./authRouter.js');
 
-// Mock the database and authRouter
 jest.mock('../database/database');
 jest.mock('./authRouter');
 
@@ -14,7 +13,6 @@ app.use('/api/franchise', franchiseRouter);
 
 describe('Franchise Router Tests', () => {
   beforeEach(() => {
-    // Clear all mocks before each test
     jest.clearAllMocks();
   });
 
@@ -34,7 +32,7 @@ describe('Franchise Router Tests', () => {
       const mockUserFranchises = [{ id: 2, name: 'pizzaPocket', admins: [], stores: [] }];
       DB.getUserFranchises.mockResolvedValue(mockUserFranchises);
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // Mock user
+        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // mock user
         next();
       });
 
@@ -45,13 +43,13 @@ describe('Franchise Router Tests', () => {
 
     it('should return 403 if user is not authorized', async () => {
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { id: 5, isRole: jest.fn().mockReturnValue(false) }; // Mock unauthorized user
+        req.user = { id: 5, isRole: jest.fn().mockReturnValue(false) }; // mock unauthorized user
         next();
       });
 
       const response = await request(app).get('/api/franchise/4').set('Authorization', 'Bearer tttttt');
-      expect(response.status).toBe(200); // Adjust based on your logic
-      expect(response.body).toEqual([]); // No franchises returned for unauthorized user
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
     });
   });
 
@@ -60,7 +58,7 @@ describe('Franchise Router Tests', () => {
       const mockFranchise = { name: 'pizzaPocket', admins: [], id: 1 };
       DB.createFranchise.mockResolvedValue(mockFranchise);
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { isRole: jest.fn().mockReturnValue(true) }; // Mock admin user
+        req.user = { isRole: jest.fn().mockReturnValue(true) }; // mock admin user
         next();
       });
 
@@ -74,7 +72,7 @@ describe('Franchise Router Tests', () => {
 
     it('should return 403 if user is not an admin', async () => {
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { isRole: jest.fn().mockReturnValue(false) }; // Mock non-admin user
+        req.user = { isRole: jest.fn().mockReturnValue(false) }; // mock non-admin user
         next();
       });
 
@@ -126,7 +124,7 @@ describe('Franchise Router Tests', () => {
       DB.createStore.mockResolvedValue(mockStore);
       DB.getFranchise.mockResolvedValue({ id: 1, admins: [{ id: 4 }] });
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // Mock authorized user
+        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // mock authorized user
         next();
       });
 
@@ -139,9 +137,9 @@ describe('Franchise Router Tests', () => {
     });
 
     it('should return 403 if user is not authorized', async () => {
-      DB.getFranchise.mockResolvedValue({ id: 1, admins: [{ id: 5 }] }); // Mock unauthorized user
+      DB.getFranchise.mockResolvedValue({ id: 1, admins: [{ id: 5 }] }); // mock unauthorized user
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // Mock unauthorized user
+        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // mock unauthorized user
         next();
       });
 
@@ -157,7 +155,7 @@ describe('Franchise Router Tests', () => {
     it('should delete a store if user is authorized', async () => {
       DB.getFranchise.mockResolvedValue({ id: 1, admins: [{ id: 4 }] });
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // Mock authorized user
+        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // mock authorized user
         next();
       });
 
@@ -169,9 +167,9 @@ describe('Franchise Router Tests', () => {
     });
 
     it('should return 403 if user is not authorized', async () => {
-      DB.getFranchise.mockResolvedValue({ id: 1, admins: [{ id: 5 }] }); // Mock unauthorized user
+      DB.getFranchise.mockResolvedValue({ id: 1, admins: [{ id: 5 }] }); // mock unauthorized user
       authRouter.authenticateToken.mockImplementation((req, res, next) => {
-        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) }; // Mock unauthorized user
+        req.user = { id: 4, isRole: jest.fn().mockReturnValue(false) };
         next();
       });
 
