@@ -20,8 +20,8 @@ jobs:
         ports:
           - '3306:3306'
         options: >-
+          --default-authentication-plugin=mysql_native_password
           --health-cmd "mysqladmin ping -ptempdbpassword" --health-interval 10s --health-start-period 10s --health-timeout 5s --health-retries 10
-
 
     steps:
       - name: Checkout repo
@@ -37,6 +37,25 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in {30..0}; do
+            if mysql -h 127.0.0.1 -u root -ptempdbpassword -e "SELECT 1" &> /dev/null; then
+              echo "MySQL is up and running"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Grant MySQL privileges
+        run: |
+          mysql -h 127.0.0.1 -u root -ptempdbpassword -e "
+          ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'tempdbpassword';
+          GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;
+          FLUSH PRIVILEGES;"
 
       - name: Write config file
         run: |
