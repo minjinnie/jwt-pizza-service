@@ -1,6 +1,4 @@
-- name: Write config file
-  run: |
-    echo "module.exports = {
+module.exports = {
       jwtSecret: '${{ secrets.JWT_SECRET }}',
       db: {
         connection: {
@@ -16,4 +14,4 @@
         url: 'https://pizza-factory.cs329.click',
         apiKey: '${{ secrets.FACTORY_API_KEY }}',
       },
-    };" > src/config.js
+    };
