@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config.js');
 const { asyncHandler } = require('../endpointHelper.js');
 const { DB, Role } = require('../database/database.js');
+const metrics = require('../metrics.js');
 
 const authRouter = express.Router();
 
@@ -65,7 +66,7 @@ authRouter.authenticateToken = (req, res, next) => {
 
 // register
 authRouter.post(
-  '/',
+  '/', metrics.track('post'),
   asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -74,33 +75,37 @@ authRouter.post(
     const user = await DB.addUser({ name, email, password, roles: [{ role: Role.Diner }] });
     const auth = await setAuth(user);
     res.json({ user: user, token: auth });
-  })
+  }),
+  metrics.trackFail()
 );
 
 // login
 authRouter.put(
-  '/',
+  '/', metrics.track('put'),
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await DB.getUser(email, password);
     const auth = await setAuth(user);
+    metrics.trackActive(true);
     res.json({ user: user, token: auth });
-  })
+  }),
+  metrics.trackFail()
 );
 
 // logout
 authRouter.delete(
-  '/',
+  '/', metrics.track('delete'),
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     await clearAuth(req);
+    metrics.trackActive(false);
     res.json({ message: 'logout successful' });
   })
 );
 
 // updateUser
 authRouter.put(
-  '/:userId',
+  '/:userId', metrics.track('put'),
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -118,12 +123,15 @@ authRouter.put(
 async function setAuth(user) {
   const token = jwt.sign(user, config.jwtSecret);
   await DB.loginUser(user.id, token);
+  metrics.trackActive(true);
+  metrics.trackSuccess();
   return token;
 }
 
 async function clearAuth(req) {
   const token = readAuthToken(req);
   if (token) {
+    metrics.trackActive(false);
     await DB.logoutUser(token);
   }
 }
