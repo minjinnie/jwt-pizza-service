@@ -5,6 +5,7 @@ const franchiseRouter = require('./routes/franchiseRouter.js');
 const version = require('./version.json');
 const config = require('./config.js');
 const metrics = require('./metrics.js');
+const logger = require('./logging/logger.js');
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   next();
 });
+app.use(logger.httpLogger);
 
 const apiRouter = express.Router();
 app.use('/api', apiRouter);
@@ -47,6 +49,7 @@ app.use('*', (req, res) => {
 
 // Default error handler for all exceptions and errors.
 app.use((err, req, res, next) => {
+  logger.exceptionLogger(err, req);
   res.status(err.statusCode ?? 500).json({ message: err.message, stack: err.stack });
   next();
 });
