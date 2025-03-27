@@ -4,9 +4,31 @@ const config = require('../config.js');
 const { StatusCodeError } = require('../endpointHelper.js');
 const { Role } = require('../model/model.js');
 const dbModel = require('./dbModel.js');
+const logger = require('../logging/logger.js');
+
 class DB {
   constructor() {
     this.initialized = this.initializeDatabase();
+    this.pool = null;
+  }
+
+  createPool() {
+    if (this.pool) {
+      return this.pool;
+    }
+    
+    this.pool = mysql.createPool({
+      host: config.db.connection.host,
+      user: config.db.connection.user,
+      password: config.db.connection.password,
+      database: config.db.connection.database,
+      connectTimeout: config.db.connection.connectTimeout,
+      decimalNumbers: true,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    });
+    return this.pool;
   }
 
   async getMenu() {
@@ -285,9 +307,16 @@ class DB {
   }
 
   async query(connection, sql, params) {
-    const [results] = await connection.execute(sql, params);
-    return results;
+    const logCallback = logger.dbLogger(sql, params); // 로그 준비
+    try {
+      const [results] = await connection.execute(sql, params);
+      return logCallback(null, results);
+    } catch (error) {
+      logCallback(error, null);
+      throw error;
+    }
   }
+  
 
   async getID(connection, key, value, table) {
     const [rows] = await connection.execute(`SELECT id FROM ${table} WHERE ${key}=?`, [value]);

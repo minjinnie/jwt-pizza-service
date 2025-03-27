@@ -4,6 +4,7 @@ const { Role, DB } = require('../database/database.js');
 const { authRouter } = require('./authRouter.js');
 const { asyncHandler, StatusCodeError } = require('../endpointHelper.js');
 const metrics = require('../metrics.js');
+const factoryService = require('../factoryService.js');
 
 const orderRouter = express.Router();
 
@@ -73,31 +74,35 @@ orderRouter.get(
   })
 );
 
-// createOrder
 orderRouter.post(
   '/', metrics.track('post'),
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
     const orderReq = req.body;
     const order = await DB.addDinerOrder(req.user, orderReq);
-    const start = performance.now();
-    const r = await fetch(`${config.factory.url}/api/order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', authorization: `Bearer ${config.factory.apiKey}` },
-      body: JSON.stringify({ diner: { id: req.user.id, name: req.user.name, email: req.user.email }, order }),
-    });
-    const end = performance.now();
-    metrics.trackLatency('creation', end - start);
-    const j = await r.json();
-    if (r.ok) {
-      const sold = order.items.length;
-      metrics.trackPizza('sold', sold);
-      const revenue = order.items.reduce((partial, a) => partial + a.price, 0);
-      metrics.trackPizza('revenue', revenue);
-      res.send({ order, reportSlowPizzaToFactoryUrl: j.reportUrl, jwt: j.jwt });
-    } else {
-      metrics.trackPizza('fail');
-      res.status(500).send({ message: 'Failed to fulfill order at factory', reportPizzaCreationErrorToPizzaFactoryUrl: j.reportUrl });
+    
+    try {
+      const response = await factoryService.sendOrder(
+        { id: req.user.id, name: req.user.name, email: req.user.email }, 
+        order
+      );
+      if (response.ok) {
+        res.send({ 
+          order, 
+          reportSlowPizzaToFactoryUrl: response.body.reportUrl, 
+          jwt: response.body.jwt 
+        });
+      } else {
+        res.status(500).send({ 
+          message: 'Failed to fulfill order at factory', 
+          reportPizzaCreationErrorToPizzaFactoryUrl: response.body.reportUrl 
+        });
+      }
+    } catch (error) {
+      res.status(500).send({ 
+        message: 'Error communicating with factory service', 
+        error: error.message 
+      });
     }
   })
 );
