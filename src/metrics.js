@@ -56,6 +56,7 @@ function trackPizza(metric, value) {
 }
 
 function trackLatency(key, time) {
+  console.log(`[METRICS] Tracking latency: ${key} - ${time}`);
   latency[key] = [...(latency[key] ?? []), time];
 }
 

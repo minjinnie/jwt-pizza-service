@@ -101,42 +101,47 @@ orderRouter.post(
     const start = Date.now();
     const orderReq = req.body;
     const order = await DB.addDinerOrder(req.user, orderReq);
-    
+
+    let response;
+    let errorOccurred = false;
+
     try {
-      const response = await factoryService.sendOrder(
-        { id: req.user.id, name: req.user.name, email: req.user.email }, 
+      response = await factoryService.sendOrder(
+        { id: req.user.id, name: req.user.name, email: req.user.email },
         order
       );
-      const duration = Date.now() - start; 
-      metrics.trackLatency('creation', duration);
 
       if (response.ok) {
+        res.send({
+          order,
+          reportSlowPizzaToFactoryUrl: response.body.reportUrl,
+          jwt: response.body.jwt
+        });
+      } else {
+        res.status(500).send({
+          message: 'Failed to fulfill order at factory',
+          reportPizzaCreationErrorToPizzaFactoryUrl: response.body.reportUrl
+        });
+      }
+    } catch (error) {
+      errorOccurred = true;
+      res.status(500).send({
+        message: 'Error communicating with factory service',
+        error: error.message
+      });
+    } finally {
+      const duration = Date.now() - start;
+      metrics.trackLatency('creation', duration);
+
+      if (!errorOccurred && order?.items?.length > 0) {
         order.items.forEach((item) => {
           metrics.trackPizza(item.description || 'unknown', 1);
         });
         metrics.trackPizza('total', 1);
-
-        res.send({ 
-          order, 
-          reportSlowPizzaToFactoryUrl: response.body.reportUrl, 
-          jwt: response.body.jwt 
-        });
-      } else {
-        res.status(500).send({ 
-          message: 'Failed to fulfill order at factory', 
-          reportPizzaCreationErrorToPizzaFactoryUrl: response.body.reportUrl 
-        });
       }
-    } catch (error) {
-      const duration = Date.now() - start;
-      metrics.trackLatency('pizza_order_error', duration);
-
-      res.status(500).send({ 
-        message: 'Error communicating with factory service', 
-        error: error.message 
-      });
     }
   })
 );
+
 
 module.exports = orderRouter;
