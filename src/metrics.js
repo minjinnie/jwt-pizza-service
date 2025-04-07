@@ -26,6 +26,7 @@ const requests = {};
 const authentication = {};
 const pizzas = {};
 const latency = {};
+const chaos = {};
 
 function track(endpoint) {
   return (req, res, next) => {
@@ -62,6 +63,11 @@ function updateMetric(metric, key, value) {
   metric[key] = (metric[key] || 0) + (value ?? 1);
 }
 
+function trackChaosFail() {
+  updateMetric(chaos, 'fail');
+}
+
+
 function getCpuUsagePercentage() {
   const cpuUsage = os.loadavg()[0] / os.cpus().length;
   return cpuUsage.toFixed(2) * 100;
@@ -84,6 +90,7 @@ if (process.env.NODE_ENV !== 'test') {
     builder.addNewMetric('cpu', getCpuUsagePercentage(), 'gauge', '%');
     builder.addNewMetric('memory', getMemoryUsagePercentage(), 'gauge', '%');
     builder.addMetrics('pizzas', pizzas, 'sum', '1');
+    builder.addMetrics('chaos_failures_total', chaos, 'sum', '1');
 
     Object.keys(latency).forEach((key) => {
       const list = latency[key] ?? [];
@@ -173,5 +180,6 @@ module.exports = {
   trackFail,
   trackActive,
   trackPizza,
-  trackLatency
+  trackLatency,
+  trackChaosFail
 };
