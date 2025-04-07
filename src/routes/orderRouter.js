@@ -98,6 +98,7 @@ orderRouter.post(
   '/', metrics.track('post'),
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
+    const start = Date.now();
     const orderReq = req.body;
     const order = await DB.addDinerOrder(req.user, orderReq);
     
@@ -106,7 +107,15 @@ orderRouter.post(
         { id: req.user.id, name: req.user.name, email: req.user.email }, 
         order
       );
+      const duration = Date.now() - start; 
+      metrics.trackLatency('creation', duration);
+
       if (response.ok) {
+        order.items.forEach((item) => {
+          metrics.trackPizza(item.description || 'unknown', 1);
+        });
+        metrics.trackPizza('total', 1);
+
         res.send({ 
           order, 
           reportSlowPizzaToFactoryUrl: response.body.reportUrl, 
@@ -119,6 +128,9 @@ orderRouter.post(
         });
       }
     } catch (error) {
+      const duration = Date.now() - start;
+      metrics.trackLatency('pizza_order_error', duration);
+
       res.status(500).send({ 
         message: 'Error communicating with factory service', 
         error: error.message 
