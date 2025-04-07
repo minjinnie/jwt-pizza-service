@@ -147,10 +147,6 @@ function getSingleMetric(metricName, metricValue, type, unit, attributes) {
 
 function sendToGrafana(metric, metricName) {
   const body = JSON.stringify(metric);
-  console.table({
-    URL: config.metrics.url,
-    KEY: config.metrics.apiKey
-  })
 
   fetch(`${config.metrics.url}`, {
     method: 'POST',
