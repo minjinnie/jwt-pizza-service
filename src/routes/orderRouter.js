@@ -132,11 +132,21 @@ orderRouter.post(
     } finally {
       const duration = Date.now() - start;
       metrics.trackLatency('creation', duration);
-
+    
       if (!errorOccurred && order?.items?.length > 0) {
+        let totalCount = 0;
+        let totalRevenue = 0;
+    
         order.items.forEach((item) => {
+          const price = parseFloat(item.price ?? 0);
+          totalRevenue += price;
+          totalCount += 1;
+    
           metrics.trackPizza(item.description || 'unknown', 1);
         });
+    
+        metrics.trackPizza('count', totalCount);
+        metrics.trackPizza('revenue', totalRevenue.toFixed(4)); // 소수점 4자리 정도로 제한
         metrics.trackPizza('total', 1);
       }
     }
